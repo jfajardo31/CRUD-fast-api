@@ -1,14 +1,25 @@
 import uvicorn
 from fastapi import FastAPI, status
 from fastapi.responses import HTMLResponse
-from routers.cognitive_router import cognitive_router
+from routes.routes import routes
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 app.title = "Title API"
 app.version = "0.0.1"
 app.description = "API description"
 
-app.include_router(cognitive_router)
+app.include_router(routes)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE","PATCH"],
+    allow_headers=["*"],
+)
+
 
 @app.get(
     path="/",
