@@ -1,15 +1,20 @@
+from dotenv import load_dotenv
 import uvicorn
 from fastapi import FastAPI, status
 from fastapi.responses import HTMLResponse
-from routes.routes import routes
+from routes.routes import routes,routes_b
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
-app.title = "Title API"
+app.title = "Práctica CRUD"
 app.version = "0.0.1"
 app.description = "API description"
 
+#cargar archivo de variables de entorno
+load_dotenv()
+
 app.include_router(routes)
+app.include_router(routes_b)
 
 
 app.add_middleware(
@@ -33,8 +38,8 @@ def message():
     Returns:
         Message
     """
-    return HTMLResponse("<h1>Title API</h1>")
-    #return f"Container ID: {socket.gethostname()}"
+    return HTMLResponse("<h1>Ejericio de Prueba</h1>")
+
 
 
 if __name__ == "__main__":

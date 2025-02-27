@@ -1,48 +1,139 @@
-# Mi Página en Markdown
+## Documentación IADRES
+### Instalación y Configuración Local
+Luego de clonar el proyecto desde git hub:
+1. **Crear entorno**  
+    **Windows**
 
-¡Bienvenido a mi página hecha en Markdown!
+        python -m venv env
 
-## Contenidos
+    **Linux** 
+    
+        python3 -m venv env
 
-1. [Introducción](#introducción)
-2. [Imagen y Citas](#imagen-y-citas)
-3. [Tablas con Alineación](#tablas-con-alineación)
-4. [Notas y Emojis](#notas-y-emojis)
+2. **Activar entorno**  
+    **Windows**
+    
+        env\Scripts\activate.bat  
 
----
+    **Linux**
+    
+        source env/bin/activate
 
-## Introducción
+3. **Instalar paquetes desde requirements**
 
-Markdown es un lenguaje de marcado ligero que puedes usar para añadir formato a texto sin usar HTML. Es muy popular en herramientas como **GitHub** y **VSCode**. Además, puedes usar _cursivas_ o incluso ~~texto tachado~~.
+    **Windows**
+        
+            python -m pip install -r requirements.txt
+            
+    **Linux**
+        
+            python3 -m pip install -r requirements.txt
 
-[Enlace a la página oficial de Markdown](https://daringfireball.net/projects/markdown/)
+4. **Crear archivo .env** 
 
-## Imagen y Citas
+5. **Ejecutar proyecto**
 
-Aquí hay una imagen de ejemplo:
 
-![Imagen de Markdown](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQfhsnJnc7ZCLadus3OF34JVkM6apxKKLeuoWr_2XEi0aR3jzICUUP9Sfe5AF8yIdbMKRc&usqp=CAU)
+        - Correr el servidor de fast-api
+            uvicorn main:app --port 8000 --reload
+        - Acceder al servidor local
+            http://127.0.0.1:8000/docs (Cambiar puerto según necesidad)
 
-> "Markdown es un lenguaje de marcado que se parece al texto sin formato." - John Gruber
 
-## Tablas con Alineación
+### Instalación y Configuración (Servidor)
+Verificar que cambios estén al día antes de dockerizar  
+**Nota:** Se recomienda actualizar el requirements del proyecto por si hay cambios no guardados  
+    **Windows**
+    
+        python -m pip freeze > requirements.txt
 
-Aquí hay una tabla con diferentes alineaciones:
+ 
+   **Linux**
+        
+        python3 -m pip freeze > requirements.txt
 
-| Izquierda  | Centro   | Derecha  |
-|:-----------|:--------:|---------:|
-| Apple      | Red      | $1.50    |
-| Banana     | Yellow   | $0.50    |
-| Strawberry | Pink     | $2.00    |
+1. **Listar contenedores**  
+    
+        docker ps
 
-## Notas y Emojis
+2. **Doble compresión de archivos proyecto a cargar: .tar y luego .gzip** 
+    
+        tar -cvf paquete.tar iadres
+        gzip -9 paquete.tar
 
-Algunos sistemas permiten notas al pie[^1] y emojis :smile:
+        tar -czvf paquete.tar.gz iadres
 
-¡Eso es! Espero que esta página de ejemplo te ayude a visualizar cómo se pueden combinar diferentes elementos de Markdown.
+3. **Enviar a servidor**  
+    Se recomienda crear en el servidor una carpeta llamada Adres  
+    **Nota:** Revisar usuario e IP del servidor a cargar
+    
+        scp paquete.tar.gz root@xx.x.x.xxx:Adres
 
-[^1]: Este es el texto de la nota al pie.
+3. **Descomprimir en el servidor**  
+    Acceder al directorio Adres  
+    **Verificar que haya subido el archivo**
+    
+        ls -l
+    **Descomprimir el archivo .gzip**  
+    
+        tar -xf paquete.tar.gz
 
----
+    **Nota:** Verificar previamente si hay archivos previos y borrar
 
-[Regresar a Contenidos](#contenidos)
+        rm -r directorio
+
+4. **Crear contenedor con balancedor nginx**  
+    Acceder al directorio del proyecto (donde se encuentra el docker-compose) y ejecutar
+
+        docker compose up --build --scale appiadres=5 -d
+    
+    **Nota:** Para comprobar los logs de algún contenedor
+
+        docker logs nombrecontenedor
+
+### Instalación y Configuración (Docker local)
+Verificar que cambios estén al día antes de dockerizar  
+**Nota:** Se recomienda actualizar el requirements del proyecto por si hay cambios no guardados  
+    **Windows**
+    
+        python -m pip freeze > requirements.txt
+
+   **Linux**
+        
+        python3 -m pip freeze > requirements.txt
+
+1. **Listar contenedores**  
+    
+        docker ps 
+
+2. **Listar imágenes**  
+    
+        docker image ls 
+
+3. **Listar volúmenes**  
+    
+        docker volumen ls 
+
+4. **Levantar contenedor**  
+    Para levantar un contenedor se debe estar en la carpeta del proyecto (donde está el docker-compose)
+    
+        docker-compose up -d
+        docker-compose up --build -d
+
+5. **Destruir contenedor**  
+    
+        docker-compose down 
+
+6. **Iniciar/detener contenedor**  
+    
+        docker-compose start
+        docker-compose stop
+
+7.  **Montaje recursos compartidos**
+
+        sudo apt-get update
+        sudo apt-get install cifs-utils
+        sudo mkdir /mnt/IMG_Orion
+        sudo mount -t cifs //10.0.4.53/IMG_Orion /IMG_Orion -o username=youruser,password=yourpassword
+
+
