@@ -2,10 +2,9 @@ import pymysql
 import os
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
-# Credenciales de producción
+# Credenciales de la BD
 MYSQL_USER = os.environ["MYSQL_USER"]
 MYSQL_PASSWORD = os.environ["MYSQL_PASSWORD"]
 MYSQL_HOST = os.environ["MYSQL_HOST"]
@@ -17,26 +16,26 @@ class ConnectDB:
         self.connect()
         
     def connect(self):
-        #Establecer conexión con la BD
-        try:
-            self.connection = pymysql.connect(
-                host=MYSQL_HOST, port=int(MYSQL_PORT), user=MYSQL_USER,
-                passwd=MYSQL_PASSWORD, db="nequi"
-            )
-            print("Conectado a MySQL")
-            return self.connection
-            
-            
-        except Exception as e:
-            print(f"Error al conectar: {e}")
+        """Establecer y mantener una conexión persistente"""
+        if not self.connection or not self.connection.open:  # Verifica si la conexión está activa
+            try:
+                self.connection = pymysql.connect( 
+                    host=MYSQL_HOST, port=int(MYSQL_PORT), user=MYSQL_USER,
+                    passwd=MYSQL_PASSWORD, db="nequi"
+                )
+                print("Conectado a MySQL")
+            except Exception as e:
+                print(f"Error al conectar: {e}")
+        return self.connection
 
- # Cierra la conexión manualmente si es necesario
     def close_connection(self):
-        if self.con:
-            self.con.close()
-    
-# Inicializa la conexión a la base de datos
-db_conn = ConnectDB()
+        """Cierra la conexión solo si está activa"""
+        if self.connection and self.connection.open: # Verifica si la conexión está activa
+            self.connection.close() #   Cierra la conexión
+            print("Conexión cerrada")
+
+# Instancia única de la conexión
+db_conn = ConnectDB() 
 
 # Función para obtener la conexión activa
 def get_db_connection():
