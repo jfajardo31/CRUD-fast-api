@@ -43,6 +43,10 @@ async def inactivate_user(id: int):
 async def get_all_bolsillos():
     return await bolsillo_service.get_bolsillos()
 
+@routes_b.get("/get-bolsillo/{id_bolsillo}")
+async def get_bolsillo(id_bolsillo: int):
+    return await bolsillo_service.get_bolsillo(id_bolsillo)
+
 @routes_b.post("/create-bolsillo/")
 async def create_bolsillo(bolsillo: Bolsillo):
     return await bolsillo_service.create_bolsillo(bolsillo)
