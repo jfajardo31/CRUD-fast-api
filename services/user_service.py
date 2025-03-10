@@ -35,6 +35,7 @@ class UserService:
     async def get_user_by_id(self, user_id: int):
         """Consulta un usuario por su ID y devuelve una respuesta estructurada."""
         try:
+            self.con.ping(reconnect=True)
             with self.con.cursor(pymysql.cursors.DictCursor) as cursor:
                 sql = "SELECT * FROM usuario WHERE id = %s"
                 cursor.execute(sql, (user_id,))
@@ -67,6 +68,8 @@ class UserService:
                     "data": None
                 }
             )
+        finally:
+            self.close_connection()
 
 
 
@@ -75,8 +78,20 @@ class UserService:
         try:
             self.con.ping(reconnect=True)
             with self.con.cursor() as cursor:
-                sql = "INSERT INTO usuario (nombre, apellido, numtelefono, password, estado) VALUES (%s, %s, %s, %s, %s)"
-                cursor.execute(sql, (user_data.nombre, user_data.apellido, user_data.numtelefono, user_data.password, user_data.estado))
+                # Verificar si el correo ya existe
+                check_sql = "SELECT COUNT(*) FROM usuario WHERE correo = %s"
+                cursor.execute(check_sql, (user_data.correo,))
+                result = cursor.fetchone()
+                
+                if result[0] > 0:
+                    return JSONResponse(
+                        status_code=400,
+                        content={"success": False, "message": "El correo ya ese encuenra registrado", "data": None}
+                    )
+                
+                # Insertar el nuevo usuario
+                sql = "INSERT INTO usuario (nombre, apellido, numtelefono, correo, password, estado) VALUES (%s, %s, %s, %s, %s, %s)"
+                cursor.execute(sql, (user_data.nombre, user_data.apellido, user_data.numtelefono, user_data.correo, user_data.password, user_data.estado))
                 self.con.commit()
 
                 if cursor.lastrowid:
@@ -99,38 +114,71 @@ class UserService:
                 status_code=500,
                 content={"success": False, "message": f"Error al crear usuario: {str(e)}", "data": None}
             )
+        finally:
+            self.close_connection()
 
 
-    async def change_password(self, user_id: int, new_password: str) -> int:
-        """Actualiza la contraseña de un usuario."""
+
+    async def change_password(self, user_id: int, new_password: str):
+        """Actualiza la contraseña de un usuario y retorna JSONResponse."""
         try:
+            self.con.ping(reconnect=True)
             with self.con.cursor() as cursor:
+                # Verificar si el usuario existe
+                check_sql = "SELECT COUNT(*) FROM usuario WHERE id=%s"
+                cursor.execute(check_sql, (user_id,))
+                result = cursor.fetchone()
+                
+                if result[0] == 0: # Si NO existe el usuario
+                    return JSONResponse(content={"success": False, "message": "Usuario no encontrado."}, status_code=404)
+                
+                # Actualizar la contraseña
                 sql = "UPDATE usuario SET password=%s WHERE id=%s"
                 cursor.execute(sql, (new_password, user_id))
-                self.con.commit()
-                return cursor.rowcount
+                self.con.commit() # Confirmar la transacción
+                
+                if cursor.rowcount > 0:
+                    return JSONResponse(content={"success": True, "message": "Contraseña actualizada exitosamente."}, status_code=200)
+                else:
+                    return JSONResponse(content={"success": False, "message": "No se realizaron cambios."}, status_code=409)
         except Exception as e:
-            print(f"Error al actualizar el password del usuario: {e}")
-            self.con.rollback()
-            return 0
+            self.con.rollback() # Deshacer la transacción
+            return JSONResponse(content={"success": False, "message": f"Error al actualizar la contraseña: {str(e)}"}, status_code=500)
         finally:
             self.close_connection()
 
-    async def inactivate_user(self, user_id: int) -> int:
-        """Inactiva un usuario cambiando su estado a 0."""
+
+
+
+    async def inactivate_user(self, user_id: int):
+        """Inactiva un usuario cambiando su estado a 0 y retorna JSONResponse."""
         try:
+            self.con.ping(reconnect=True)
             with self.con.cursor() as cursor:
+                # Verificar si el usuario existe
+                check_sql = "SELECT COUNT(*) FROM usuario WHERE id=%s"
+                cursor.execute(check_sql, (user_id,))
+                result = cursor.fetchone()
+                
+                if result[0] == 0:  # Si el usuario no existe
+                    return JSONResponse(content={"success": False, "message": "Usuario no encontrado."}, status_code=404)
+
+                # Inactivar usuario
                 sql = "UPDATE usuario SET estado=0 WHERE id=%s"
                 cursor.execute(sql, (user_id,))
-                self.con.commit()
-                return cursor.rowcount
+                self.con.commit()  # Confirmar la transacción
+
+                if cursor.rowcount > 0:
+                    return JSONResponse(content={"success": True, "message": "Usuario inactivado exitosamente."}, status_code=200)
+                else:
+                    return JSONResponse(content={"success": False, "message": "No se realizaron cambios."}, status_code=400)
         except Exception as e:
-            print(f"Error al inactivar el usuario: {e}")
-            self.con.rollback()
-            return 0
+            self.con.rollback()  # Deshacer la transacción
+            return JSONResponse(content={"success": False, "message": f"Error al inactivar usuario: {str(e)}"}, status_code=500)
         finally:
             self.close_connection()
+
 
     def close_connection(self):
         """Llama al cierre de conexión de la base de datos."""
-        self.db_instance.close_connection()
+        self.con.close()

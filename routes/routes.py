@@ -32,8 +32,8 @@ async def create_user(user: User):
     return await user_service.create_user(user)
 
 @routes.patch("/change-password/")
-async def change_password(new_password: str, id: str):
-    return await user_service.change_password(new_password, id)
+async def change_password(id: str, new_password: str):
+    return await user_service.change_password(id, new_password)
 
 @routes.patch("/inactivate/{id}")
 async def inactivate_user(id: int):
