@@ -16,6 +16,7 @@ class ConnectDB:
         self.connect()
         
     def connect(self):
+        
         """Establecer y mantener una conexión persistente"""
         if not self.connection or not self.connection.open:  # Verifica si la conexión está activa
             try:

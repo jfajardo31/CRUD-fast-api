@@ -14,6 +14,8 @@ class UserService:
     async def get_users(self):
         """Consulta todos los usuarios y devuelve una respuesta estructurada."""
         try:
+            
+            self.con.ping(reconnect=True)
             with self.con.cursor(pymysql.cursors.DictCursor) as cursor:
                 cursor.execute("SELECT * FROM usuario")
                 users = cursor.fetchall()
@@ -27,10 +29,12 @@ class UserService:
                     }
                 )
         except Exception as e:
+            print("Error en get_users:", str(e))  # <-- Esto te lo muestra en consola
             return JSONResponse(
                 status_code=500,
                 content={"success": False, "message": f"Error al consultar usuarios: {str(e)}", "data": None}
             )
+
             
     async def get_user_by_id(self, user_id: int):
         """Consulta un usuario por su ID y devuelve una respuesta estructurada."""
@@ -177,6 +181,34 @@ class UserService:
             return JSONResponse(content={"success": False, "message": f"Error al inactivar usuario: {str(e)}"}, status_code=500)
         finally:
             self.close_connection()
+            
+            
+    async def toggle_user_status(self, user_id: int):
+        try:
+            self.con.ping(reconnect=True)
+            with self.con.cursor() as cursor:
+                # Obtener estado actual
+                get_estado_sql = "SELECT estado FROM usuario WHERE id=%s"
+                cursor.execute(get_estado_sql, (user_id,))
+                result = cursor.fetchone()
+
+                if not result:
+                    return JSONResponse(content={"success": False, "message": "Usuario no encontrado."}, status_code=404)
+
+                estado_actual = result[0]
+                nuevo_estado = 0 if estado_actual == 1 else 1
+
+                update_sql = "UPDATE usuario SET estado=%s WHERE id=%s"
+                cursor.execute(update_sql, (nuevo_estado, user_id))
+                self.con.commit()
+
+                return JSONResponse(content={"success": True, "message": "Estado actualizado correctamente."}, status_code=200)
+        except Exception as e:
+            self.con.rollback()
+            return JSONResponse(content={"success": False, "message": f"Error al cambiar estado: {str(e)}"}, status_code=500)
+        finally:
+            self.close_connection()
+    
 
 
     def close_connection(self):

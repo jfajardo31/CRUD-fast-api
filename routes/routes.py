@@ -35,9 +35,13 @@ async def create_user(user: User):
 async def change_password(id: str, new_password: str):
     return await user_service.change_password(id, new_password)
 
-@routes.patch("/inactivate/{id}")
-async def inactivate_user(id: int):
-    return await user_service.inactivate_user(id)
+@routes.patch("/inactivate/{user_id}")
+async def inactivate_user(user_id: int):
+    return await user_service.inactivate_user(user_id)
+
+@routes.patch("/change-status/{user_id}")
+async def change_user_status(user_id: int):
+    return await user_service.toggle_user_status(user_id)
 
 @routes_b.get("/get-bolsillos/")
 async def get_all_bolsillos():
