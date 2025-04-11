@@ -15,7 +15,7 @@ class UserService:
         """Consulta todos los usuarios y devuelve una respuesta estructurada."""
         try:
             
-            self.con.ping(reconnect=True)
+            self.con.ping(reconnect=True) #pilas agregar esto para que no de lío la consulta al volverla a llamar
             with self.con.cursor(pymysql.cursors.DictCursor) as cursor:
                 cursor.execute("SELECT * FROM usuario")
                 users = cursor.fetchall()
@@ -209,6 +209,47 @@ class UserService:
         finally:
             self.close_connection()
     
+    async def update_user(self, user_id: int, user_data: User):
+        """
+        Actualiza los datos de un usuario excepto el campo 'estado'.
+        """
+        try:
+            self.con.ping(reconnect=True)
+            with self.con.cursor() as cursor:
+                # Verificar si el usuario existe
+                check_sql = "SELECT COUNT(*) FROM usuario WHERE id=%s"
+                cursor.execute(check_sql, (user_id,))
+                result = cursor.fetchone()
+
+                if result[0] == 0:
+                    return JSONResponse(content={"success": False, "message": "Usuario no encontrado."}, status_code=404)
+
+                # Actualizar campos (excepto estado)
+                update_sql = """
+                    UPDATE usuario
+                    SET nombre=%s, apellido=%s, numtelefono=%s, correo=%s, password=%s
+                    WHERE id=%s
+                """
+                cursor.execute(update_sql, (
+                    user_data.nombre,
+                    user_data.apellido,
+                    user_data.numtelefono,
+                    user_data.correo,
+                    user_data.password,
+                    user_id
+                ))
+                self.con.commit()
+
+                if cursor.rowcount > 0:
+                    return JSONResponse(content={"success": True, "message": "Usuario actualizado correctamente."}, status_code=200)
+                else:
+                    return JSONResponse(content={"success": False, "message": "No se realizaron cambios."}, status_code=409)
+
+        except Exception as e:
+            self.con.rollback()
+            return JSONResponse(content={"success": False, "message": f"Error al actualizar usuario: {str(e)}"}, status_code=500)
+        finally:
+            self.close_connection()
 
 
     def close_connection(self):

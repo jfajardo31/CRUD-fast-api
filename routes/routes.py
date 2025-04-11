@@ -43,6 +43,10 @@ async def inactivate_user(user_id: int):
 async def change_user_status(user_id: int):
     return await user_service.toggle_user_status(user_id)
 
+@routes.put("/update-user/{user_id}")
+async def update_user(user_id: int, user_data: User):
+    return await user_service.update_user(user_id, user_data)
+
 @routes_b.get("/get-bolsillos/")
 async def get_all_bolsillos():
     return await bolsillo_service.get_bolsillos()
